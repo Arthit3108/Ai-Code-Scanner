@@ -81,6 +81,7 @@ func RunTrivy(target, outputType string) ([]CleanVuln, error) {
 	}
 
 	var dataToWrite []byte
+	
 	if outputType == "json" {
 		jsonData, err := json.MarshalIndent(vulns, "", "  ")
 		if err != nil {
