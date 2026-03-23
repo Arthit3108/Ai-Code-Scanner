@@ -14,6 +14,8 @@ type CleanVuln struct {
 	FixedVersion     string `json:"fixed_version"`
 	Severity         string `json:"severity"`
 	Title            string `json:"title"`
+	FixCommand       string `json:"fix_command"`
+	FixExplanation   string `json:"fix_explanation"`
 }
 
 type TrivyReport struct {
