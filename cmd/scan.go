@@ -14,6 +14,7 @@ import (
 
 var target string
 var output string
+var severity string
 
 var scanCmd = &cobra.Command{
 	Use:   "scan",
@@ -24,7 +25,7 @@ var scanCmd = &cobra.Command{
 		// Load .env for local dev; ignore error in CI (env vars set externally)
 		_ = godotenv.Load(".env")
 
-		vuln, err := scanner.RunTrivy(target, "json")
+		vuln, err := scanner.RunTrivy(target, "json", severity)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -66,4 +67,5 @@ func init() {
 	rootCmd.AddCommand(scanCmd)
 	scanCmd.Flags().StringVarP(&target, "target", "t", ".", "Target directory to scan")
 	scanCmd.Flags().StringVarP(&output, "output", "o", "", "Output file path (default: scanResult.json)")
+	scanCmd.Flags().StringVar(&severity, "severity", "HIGH,CRITICAL", "Severity levels to scan (e.g. HIGH,CRITICAL)")
 }

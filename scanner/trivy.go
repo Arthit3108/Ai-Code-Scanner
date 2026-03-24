@@ -37,16 +37,16 @@ type TrivyVulnerability struct {
 	Title            string `json:"Title"`
 }
 
-func RunTrivy(target, outputType string) ([]CleanVuln, error) {
+func RunTrivy(target, outputType, severity string) ([]CleanVuln, error) {
 	var cmd *exec.Cmd
 
 	switch outputType {
 	case "json":
 		fmt.Printf("output type %s\n", outputType)
-		cmd = exec.Command("trivy", "fs", target, "-f", "json", "--severity", "HIGH,CRITICAL")
+		cmd = exec.Command("trivy", "fs", target, "-f", "json", "--severity", severity)
 	case "report":
 		fmt.Printf("output type %s\n", outputType)
-		cmd = exec.Command("trivy", "fs", target, "-f", "table", "--severity", "HIGH,CRITICAL")
+		cmd = exec.Command("trivy", "fs", target, "-f", "table", "--severity", severity)
 	default:
 		return nil, fmt.Errorf("unsupported output type: %s", outputType)
 	}
