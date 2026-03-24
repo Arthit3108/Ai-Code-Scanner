@@ -48,7 +48,13 @@ runs:
       shell: bash
       run: |
         mkdir -p $HOME/bin
-        curl -L https://github.com/Arthit3108/ai-code-scanner/releases/download/${{ github.action_ref }}/ai-scanner \
+        VERSION="${{ github.action_ref }}"
+        if [ -z "$VERSION" ]; then
+          VERSION="v1"
+        fi
+        echo "Downloading version $VERSION"
+        curl -L -H "Authorization: token ${{ github.token }}"\
+         https://github.com/Arthit3108/ai-code-scanner/releases/download/${{ github.action_ref }}/ai-scanner \
           -o $HOME/bin/ai-scanner
         chmod +x $HOME/bin/ai-scanner
         echo "$HOME/bin" >> $GITHUB_PATH
