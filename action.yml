@@ -40,9 +40,9 @@ runs:
   steps:
 
     - name: Install Gitleaks
-      shell: bash
-      run: |
-        curl -sfL https://raw.githubusercontent.com/aquasecurity/gitleaks/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+      uses: gitleaks/gitleaks-action@v2
+      with:
+        install-only: true
 
     - name: Install Trivy
       shell: bash
