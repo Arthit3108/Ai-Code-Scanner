@@ -43,6 +43,7 @@ runs:
     - name: Download Scanner Binary
       shell: bash
       run: |
+        mkdir -p $HOME/bin
         curl -L https://github.com/Arthit3108/ai-code-scanner/releases/latest/download/ai-scanner \
           -o $HOME/bin/ai-scanner
         chmod +x $HOME/bin/ai-scanner
