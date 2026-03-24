@@ -76,5 +76,5 @@ func init() {
 	scanCmd.Flags().StringVarP(&target, "target", "t", ".", "Target directory to scan")
 	scanCmd.Flags().StringVarP(&output, "output", "o", "", "Output file path (default: scanResult.json)")
 	scanCmd.Flags().StringVar(&severity, "severity", "HIGH,CRITICAL", "Severity levels to scan (e.g. HIGH,CRITICAL)")
-	scanCmd.Flags().StringVar(&outputType, "output_type", "json", "Output type (default: json)")
+	scanCmd.Flags().StringVar(&outputType, "output-type", "json", "Output type (default: json)")
 }
