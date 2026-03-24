@@ -35,8 +35,18 @@ runs:
   using: "composite"
   steps:
    
-    - name: Setup Trivy
-      uses: aquasecurity/trivy-action@v0.20.0
+    - name: Install Trivy
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget gnupg lsb-release
+
+        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+        echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" \
+          | sudo tee /etc/apt/sources.list.d/trivy.list
+
+        sudo apt-get update
+        sudo apt-get install -y trivy
     
     - name: Download Scanner Binary
       shell: bash
