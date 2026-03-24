@@ -1,20 +1,19 @@
 package cmd
 
 import (
-	"fmt"
-
-	"github.com/spf13/cobra"
-
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/spf13/cobra"
 
 	"ai-code-scanner/ai"
 	"ai-code-scanner/scanner"
 )
 
 var target string
+var output string
 
 var scanCmd = &cobra.Command{
 	Use:   "scan",
@@ -22,9 +21,8 @@ var scanCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("hello from scan")
 
-		if err := godotenv.Load(".env"); err != nil {
-			fmt.Println("Error loading .env file:", err)
-		}
+		// Load .env for local dev; ignore error in CI (env vars set externally)
+		_ = godotenv.Load(".env")
 
 		vuln, err := scanner.RunTrivy(target, "json")
 		if err != nil {
@@ -49,11 +47,15 @@ var scanCmd = &cobra.Command{
 			if err != nil {
 				fmt.Println("Error marshaling final results:", err)
 			} else {
-				err = os.WriteFile("scanResult.json", jsonData, 0644)
+				outputPath := "scanResult.json"
+				if output != "" {
+					outputPath = output
+				}
+				err = os.WriteFile(outputPath, jsonData, 0644)
 				if err != nil {
 					fmt.Println("Error writing final JSON:", err)
 				} else {
-					fmt.Println("Successfully saved merged AI results to scanResult.json")
+					fmt.Println("Successfully saved merged AI results to", outputPath)
 				}
 			}
 		}
@@ -62,5 +64,6 @@ var scanCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(scanCmd)
-	scanCmd.Flags().StringVarP(&target, "target", "t", "", "Target directory to scan")
+	scanCmd.Flags().StringVarP(&target, "target", "t", ".", "Target directory to scan")
+	scanCmd.Flags().StringVarP(&output, "output", "o", "", "Output file path (default: scanResult.json)")
 }
