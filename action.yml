@@ -14,6 +14,10 @@ inputs:
     description: "Severity level to scan"
     required: false
     default: "HIGH,CRITICAL"
+  output_type:
+    description: "Output format (json or sarif)"
+    required: false
+    default: "json"
   fail_on_critical:
     description: "Fail on critical vulnerabilities"
     required: false
@@ -55,17 +59,30 @@ runs:
       env:
         GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
       run: |
+        OUTPUT_FILE="report.json"
+        if [ "${{ inputs.output_type }}" == "sarif" ]; then
+          OUTPUT_FILE="results.sarif"
+        fi
+
         ai-scanner scan \
           --target ${{ inputs.target }} \
           --severity ${{ inputs.severity }} \
-          --output report.json
-        echo "report_path=report.json" >> $GITHUB_OUTPUT
+          --output-type ${{ inputs.output_type }} \
+          --output $OUTPUT_FILE
+        
+        echo "report_path=$OUTPUT_FILE" >> $GITHUB_OUTPUT
+
+    - name: Upload SARIF to GitHub
+      if: inputs.output_type == 'sarif'
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: results.sarif
 
     - name: Upload Report Artifact
       uses: actions/upload-artifact@v4
       with:
         name: security-report
-        path: report.json
+        path: ${{ steps.scan.outputs.report_path }}
 
     - name: Check Vulnerabilities
       shell: bash
@@ -74,13 +91,20 @@ runs:
         FAIL_ON_HIGH: ${{ inputs.fail_on_high }}
         FAIL_ON_MEDIUM: ${{ inputs.fail_on_medium }}
         FAIL_ON_LOW: ${{ inputs.fail_on_low }}
+        REPORT_FILE: ${{ steps.scan.outputs.report_path }}
       run: |
+        # Only check vulnerabilities if we have a JSON report
+        if [[ "$REPORT_FILE" != *.json ]]; then
+          echo "Skipping threshold check: report is not in JSON format"
+          exit 0
+        fi
+
         FAILED=0
 
         check() {
           local LEVEL=$1
           local FLAG=$2
-          COUNT=$(jq --arg s "$LEVEL" '[.[] | select(.severity == $s)] | length' report.json)
+          COUNT=$(jq --arg s "$LEVEL" '[.[] | select(.severity == $s)] | length' "$REPORT_FILE")
           if [ "$FLAG" == "true" ] && [ "$COUNT" -gt 0 ]; then
             echo "❌ $LEVEL: $COUNT vulnerabilities found"
             FAILED=1

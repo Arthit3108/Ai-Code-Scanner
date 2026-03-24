@@ -3,7 +3,6 @@ package scanner
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"os/exec"
 )
 
@@ -37,7 +36,7 @@ type TrivyVulnerability struct {
 	Title            string `json:"Title"`
 }
 
-func RunTrivy(target, outputType, severity string) ([]CleanVuln, error) {
+func RunTrivy(target, outputType, severity string) ([]CleanVuln, []byte, error) {
 	var cmd *exec.Cmd
 
 	switch outputType {
@@ -48,16 +47,16 @@ func RunTrivy(target, outputType, severity string) ([]CleanVuln, error) {
 		fmt.Printf("output type %s\n", outputType)
 		cmd = exec.Command("trivy", "fs", target, "-f", "sarif", "--severity", severity)
 	default:
-		return nil, fmt.Errorf("unsupported output type: %s", outputType)
+		return nil, nil, fmt.Errorf("unsupported output type: %s", outputType)
 	}
 
 	if cmd == nil {
-		return nil, fmt.Errorf("command not initialized")
+		return nil, nil, fmt.Errorf("command not initialized")
 	}
 
 	scanOutput, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("failed to run trivy: %w", err)
+		return nil, nil, fmt.Errorf("failed to run trivy: %w", err)
 	}
 
 	var vulns []CleanVuln
@@ -65,7 +64,7 @@ func RunTrivy(target, outputType, severity string) ([]CleanVuln, error) {
 	if outputType == "json" {
 		var report TrivyReport
 		if err := json.Unmarshal(scanOutput, &report); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal trivy output: %w", err)
+			return nil, nil, fmt.Errorf("failed to unmarshal trivy output: %w", err)
 		}
 
 		for _, result := range report.Results {
@@ -84,24 +83,5 @@ func RunTrivy(target, outputType, severity string) ([]CleanVuln, error) {
 		}
 	}
 
-	var dataToWrite []byte
-	
-	if outputType == "json" {
-		jsonData, err := json.MarshalIndent(vulns, "", "  ")
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal clean vulnerabilities: %w", err)
-		}
-		dataToWrite = jsonData
-	} else {
-		dataToWrite = scanOutput
-	}
-
-	fileName := "trivyResult." + outputType
-	errWriteFile := os.WriteFile(fileName, dataToWrite, 0644)
-
-	if errWriteFile != nil {
-		return nil, fmt.Errorf("failed to write scan result: %w", errWriteFile)
-	}
-
-	return vulns, nil
+	return vulns, scanOutput, nil
 }

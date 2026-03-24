@@ -15,6 +15,7 @@ import (
 var target string
 var output string
 var severity string
+var outputType string
 
 var scanCmd = &cobra.Command{
 	Use:   "scan",
@@ -22,14 +23,14 @@ var scanCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		_ = godotenv.Load(".env")
 
-		vuln, err := scanner.RunTrivy(target, "json", severity)
+		vuln, rawOutput, err := scanner.RunTrivy(target, outputType, severity)
 		if err != nil {
 			fmt.Println(err)
 		}
 
 		analysis, err := ai.Gemini(vuln)
 		if err != nil {
-			fmt.Println("AI Analysis Error:", err)
+			fmt.Println("AI Analysis Error (continuing without AI):", err)
 		} else {
 			// Map AI analysis to vulnerabilities
 			for i := range vuln {
@@ -40,23 +41,32 @@ var scanCmd = &cobra.Command{
 					}
 				}
 			}
+		}
 
+		// Always write output file
+		outputPath := "scanResult.json"
+		if output != "" {
+			outputPath = output
+		}
+
+		var dataToWrite []byte
+		if outputType == "json" {
 			jsonData, err := json.MarshalIndent(vuln, "", "  ")
-			fmt.Println(string(jsonData))
 			if err != nil {
 				fmt.Println("Error marshaling final results:", err)
-			} else {
-				outputPath := "scanResult.json"
-				if output != "" {
-					outputPath = output
-				}
-				err = os.WriteFile(outputPath, jsonData, 0644)
-				if err != nil {
-					fmt.Println("Error writing final JSON:", err)
-				} else {
-					fmt.Println("Successfully saved merged AI results to", outputPath)
-				}
+				return
 			}
+			dataToWrite = jsonData
+			fmt.Println(string(dataToWrite))
+		} else {
+			dataToWrite = rawOutput
+		}
+
+		err = os.WriteFile(outputPath, dataToWrite, 0644)
+		if err != nil {
+			fmt.Println("Error writing final output:", err)
+		} else {
+			fmt.Println("Successfully saved results to", outputPath)
 		}
 	},
 }
@@ -66,4 +76,5 @@ func init() {
 	scanCmd.Flags().StringVarP(&target, "target", "t", ".", "Target directory to scan")
 	scanCmd.Flags().StringVarP(&output, "output", "o", "", "Output file path (default: scanResult.json)")
 	scanCmd.Flags().StringVar(&severity, "severity", "HIGH,CRITICAL", "Severity levels to scan (e.g. HIGH,CRITICAL)")
+	scanCmd.Flags().StringVar(&outputType, "output-type", "json", "Output type (default: json)")
 }
