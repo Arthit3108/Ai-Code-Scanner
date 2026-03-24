@@ -1,3 +1,31 @@
+# Binary files (ไฟล์ที่ build ออกมา)
+ai-scanner
+ai-scanner.exe
+ai-scanner-linux
+ai-scanner-darwin
+
+# Sensitive data (สำคัญมาก!)
 .env
+
+# Scan Results (ไฟล์ผลลัพธ์ที่สร้างจากการสแกน)
+scanResult.json
+report.json
+results.sarif
 *.json
-*.txt
+*.sarif
+
+# Go dependencies & coverage
+vendor/
+coverage.out
+*.test
+
+# IDE & OS Specific
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Temporary files
+/tmp/
+
+
