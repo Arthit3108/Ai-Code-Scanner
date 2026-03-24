@@ -44,9 +44,9 @@ func RunTrivy(target, outputType, severity string) ([]CleanVuln, error) {
 	case "json":
 		fmt.Printf("output type %s\n", outputType)
 		cmd = exec.Command("trivy", "fs", target, "-f", "json", "--severity", severity)
-	case "report":
+	case "sarif":
 		fmt.Printf("output type %s\n", outputType)
-		cmd = exec.Command("trivy", "fs", target, "-f", "table", "--severity", severity)
+		cmd = exec.Command("trivy", "fs", target, "-f", "sarif", "--severity", severity)
 	default:
 		return nil, fmt.Errorf("unsupported output type: %s", outputType)
 	}

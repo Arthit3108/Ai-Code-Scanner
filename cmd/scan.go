@@ -20,9 +20,6 @@ var scanCmd = &cobra.Command{
 	Use:   "scan",
 	Short: "Scan a target",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("hello from scan")
-
-		// Load .env for local dev; ignore error in CI (env vars set externally)
 		_ = godotenv.Load(".env")
 
 		vuln, err := scanner.RunTrivy(target, "json", severity)
@@ -45,6 +42,7 @@ var scanCmd = &cobra.Command{
 			}
 
 			jsonData, err := json.MarshalIndent(vuln, "", "  ")
+			fmt.Println(string(jsonData))
 			if err != nil {
 				fmt.Println("Error marshaling final results:", err)
 			} else {

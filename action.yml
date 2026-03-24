@@ -34,12 +34,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-   
+
     - name: Install Trivy
       shell: bash
       run: |
         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-    
+
     - name: Download Scanner Binary
       shell: bash
       run: |
@@ -48,7 +48,7 @@ runs:
           -o $HOME/bin/ai-scanner
         chmod +x $HOME/bin/ai-scanner
         echo "$HOME/bin" >> $GITHUB_PATH
-      
+
     - name: Run Scan
       id: scan
       shell: bash
@@ -67,46 +67,34 @@ runs:
         name: security-report
         path: report.json
 
-    - name: Fail if CRITICAL
-      if: inputs.fail_on_critical == 'true'
+    - name: Check Vulnerabilities
       shell: bash
+      env:
+        FAIL_ON_CRITICAL: ${{ inputs.fail_on_critical }}
+        FAIL_ON_HIGH: ${{ inputs.fail_on_high }}
+        FAIL_ON_MEDIUM: ${{ inputs.fail_on_medium }}
+        FAIL_ON_LOW: ${{ inputs.fail_on_low }}
       run: |
-        CRITICAL=$(jq '[.[] | select(.severity == "CRITICAL")] | length' report.json)
-        echo "CRITICAL found: $CRITICAL"
-        if [ "$CRITICAL" -gt 0 ]; then
-          echo "❌ Pipeline failed: CRITICAL vulnerabilities detected"
-          exit 1
-        fi
-    
-    - name: Fail if HIGH
-      if: inputs.fail_on_high == 'true'
-      shell: bash
-      run: |
-        HIGH=$(jq '[.[] | select(.severity == "HIGH")] | length' report.json)
-        echo "HIGH found: $HIGH"
-        if [ "$HIGH" -gt 0 ]; then
-          echo "❌ Pipeline failed: HIGH vulnerabilities detected"
-          exit 1
-        fi
+        FAILED=0
 
-    - name: Fail if MEDIUM
-      if: inputs.fail_on_medium == 'true'
-      shell: bash
-      run: |
-        MEDIUM=$(jq '[.[] | select(.severity == "MEDIUM")] | length' report.json)
-        echo "MEDIUM found: $MEDIUM"
-        if [ "$MEDIUM" -gt 0 ]; then
-          echo "❌ Pipeline failed: MEDIUM vulnerabilities detected"
-          exit 1
-        fi
+        check() {
+          local LEVEL=$1
+          local FLAG=$2
+          COUNT=$(jq --arg s "$LEVEL" '[.[] | select(.severity == $s)] | length' report.json)
+          if [ "$FLAG" == "true" ] && [ "$COUNT" -gt 0 ]; then
+            echo "❌ $LEVEL: $COUNT vulnerabilities found"
+            FAILED=1
+          else
+            echo "✅ $LEVEL: $COUNT"
+          fi
+        }
 
-    - name: Fail if LOW
-      if: inputs.fail_on_low == 'true'
-      shell: bash
-      run: |
-        LOW=$(jq '[.[] | select(.severity == "LOW")] | length' report.json)
-        echo "LOW found: $LOW"
-        if [ "$LOW" -gt 0 ]; then
-          echo "❌ Pipeline failed: LOW vulnerabilities detected"
+        check "CRITICAL" "$FAIL_ON_CRITICAL"
+        check "HIGH"     "$FAIL_ON_HIGH"
+        check "MEDIUM"   "$FAIL_ON_MEDIUM"
+        check "LOW"      "$FAIL_ON_LOW"
+
+        if [ "$FAILED" -eq 1 ]; then
+          echo "❌ Pipeline failed: vulnerabilities detected above threshold"
           exit 1
         fi
