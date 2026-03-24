@@ -48,7 +48,7 @@ runs:
       shell: bash
       run: |
         mkdir -p $HOME/bin
-        curl -L https://github.com/Arthit3108/ai-code-scanner/releases/{{ github.action_ref }}/download/ai-scanner \
+        curl -L https://github.com/Arthit3108/ai-code-scanner/releases/${{ github.action_ref }}/download/ai-scanner \
           -o $HOME/bin/ai-scanner
         chmod +x $HOME/bin/ai-scanner
         echo "$HOME/bin" >> $GITHUB_PATH
