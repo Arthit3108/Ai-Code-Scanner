@@ -63,7 +63,7 @@ runs:
       with:
         name: security-report
         path: report.json
-        
+
     - name: Fail if CRITICAL
       if: inputs.fail_on_critical == 'true'
       shell: bash
@@ -75,8 +75,6 @@ runs:
           exit 1
         fi
     
-    
-
     - name: Fail if HIGH
       if: inputs.fail_on_high == 'true'
       shell: bash
