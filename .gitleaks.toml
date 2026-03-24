@@ -1,0 +1,9 @@
+[allowlist]
+    paths = [
+        '''\.env$''',
+        '''ai-scanner$''',
+        '''ai-scanner\.exe$''',
+        '''scanResult\.json$''',
+        '''report\.json$''',
+        '''results\.sarif$'''
+    ]

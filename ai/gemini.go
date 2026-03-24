@@ -17,7 +17,7 @@ type AiAnalysis struct {
 	FixExplanation string `json:"fix_explanation"`
 }
 
-func Gemini(vuln []scanner.CleanVuln) ([]AiAnalysis, error) {
+func Gemini(vuln []scanner.CleanVuln, secrets []scanner.GitleaksFinding) ([]AiAnalysis, error) {
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey: os.Getenv("GEMINI_API_KEY"),
@@ -27,15 +27,21 @@ func Gemini(vuln []scanner.CleanVuln) ([]AiAnalysis, error) {
 	}
 
 	vulnJSON, _ := json.MarshalIndent(vuln, "", "  ")
+	secretsJSON, _ := json.MarshalIndent(secrets, "", "  ")
 
 	prompt := fmt.Sprintf(`
 		You are a security analysis assistant. 
-		Analyze the following vulnerability scan results and provide a concise security report.
+		Analyze the following vulnerability scan results and secrets detection and provide a concise security report.
 
-		Vulnerabilities found:
+		Vulnerabilities found by Trivy:
 		<vulns>
 		%s
 		</vulns>
+
+		Secrets found by Gitleaks:
+		<secrets>
+		%s
+		</secrets>
 
 		Respond in this exact JSON array format, nothing else (no markdown block):
 		[
@@ -44,7 +50,11 @@ func Gemini(vuln []scanner.CleanVuln) ([]AiAnalysis, error) {
 				"fix_command": "command here",
 				"fix_explanation": "One sentence why this fixes it"
 			}
-		]`, string(vulnJSON))
+		]
+		Note: For Gitleaks findings, the ID should correspond to the order in the secrets list but we will handle mapping. 
+		Actually, for simplicity, provide one analysis per item if possible or a general report.
+		The current system maps 'id' to Trivy vulnerabilities. 
+		Please provide analysis for each vulnerability. For secrets, you can provide recommendations as well.`, string(vulnJSON), string(secretsJSON))
 
 	result, err := client.Models.GenerateContent(
 		ctx,

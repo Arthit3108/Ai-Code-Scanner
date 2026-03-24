@@ -39,6 +39,11 @@ runs:
   using: "composite"
   steps:
 
+    - name: Install Gitleaks
+      shell: bash
+      run: |
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/gitleaks/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
     - name: Install Trivy
       shell: bash
       run: |

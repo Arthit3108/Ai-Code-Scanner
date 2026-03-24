@@ -25,22 +25,34 @@ var scanCmd = &cobra.Command{
 
 		vuln, rawOutput, err := scanner.RunTrivy(target, outputType, severity)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("Trivy Scan Error: %v\n", err)
 		}
 
-		analysis, err := ai.Gemini(vuln)
+		// Run Gitleaks
+		fmt.Println("Running Gitleaks scan...")
+		secrets, err := scanner.RunGitleaks(target)
 		if err != nil {
-			fmt.Println("AI Analysis Error (continuing without AI):", err)
-		} else {
-			// Map AI analysis to vulnerabilities
-			for i := range vuln {
-				for _, a := range analysis {
-					if vuln[i].ID == a.ID {
-						vuln[i].FixCommand = a.FixCommand
-						vuln[i].FixExplanation = a.FixExplanation
+			fmt.Printf("Gitleaks Scan Error: %v\n", err)
+		}
+
+		// Only call Gemini if there are findings to analyze
+		if len(vuln) > 0 || len(secrets) > 0 {
+			analysis, err := ai.Gemini(vuln, secrets)
+			if err != nil {
+				fmt.Printf("\n⚠️  AI Analysis Error (continuing with raw scan results): %v\n", err)
+			} else {
+				// Map AI analysis to vulnerabilities
+				for i := range vuln {
+					for _, a := range analysis {
+						if vuln[i].ID == a.ID {
+							vuln[i].FixCommand = a.FixCommand
+							vuln[i].FixExplanation = a.FixExplanation
+						}
 					}
 				}
 			}
+		} else {
+			fmt.Println("\nNo vulnerabilities or secrets found. Skipping AI analysis.")
 		}
 
 		// Always write output file
@@ -49,9 +61,20 @@ var scanCmd = &cobra.Command{
 			outputPath = output
 		}
 
+		// Combine results for JSON output
+		type CombinedResult struct {
+			Vulnerabilities []scanner.CleanVuln      `json:"vulnerabilities"`
+			Secrets         []scanner.GitleaksFinding `json:"secrets"`
+		}
+
+		combined := CombinedResult{
+			Vulnerabilities: vuln,
+			Secrets:         secrets,
+		}
+
 		var dataToWrite []byte
 		if outputType == "json" {
-			jsonData, err := json.MarshalIndent(vuln, "", "  ")
+			jsonData, err := json.MarshalIndent(combined, "", "  ")
 			if err != nil {
 				fmt.Println("Error marshaling final results:", err)
 				return
@@ -82,11 +105,12 @@ var scanCmd = &cobra.Command{
 
 		fmt.Println("\n---------------------------------------")
 		fmt.Println("Scan Results Summary:")
-		fmt.Printf("Total Vulnerabilities: %d\n", len(vuln))
+		fmt.Printf("Total Vulnerabilities (Trivy): %d\n", len(vuln))
 		fmt.Printf("🔴 Critical: %d\n", critical)
 		fmt.Printf("🟠 High: %d\n", high)
 		fmt.Printf("🟡 Medium: %d\n", medium)
 		fmt.Printf("🟢 Low: %d\n", low)
+		fmt.Printf("\nTotal Secrets (Gitleaks): %d\n", len(secrets))
 		fmt.Println("---------------------------------------")
 
 		err = os.WriteFile(outputPath, dataToWrite, 0644)
