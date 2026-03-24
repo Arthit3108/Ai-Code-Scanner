@@ -34,17 +34,26 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Install Tricy
+   
+    - name: Install Trivy
       shell: bash
       run: |
-        curl -fsSL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.50.2
+        mkdir -p $HOME/bin
+        curl -fsSL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+          | sh -s -- -b $HOME/bin v0.50.2
+        echo "$HOME/bin" >> $GITHUB_PATH
+
+    - name: Install jq
+      shell: bash
+      run: sudo apt-get update && sudo apt-get install -y jq
     
     - name: Download Scanner Binary
       shell: bash
       run: |
         curl -L https://github.com/Arthit3108/ai-code-scanner/releases/latest/download/ai-scanner \
-          -o /usr/local/bin/ai-scanner
-        chmod +x /usr/local/bin/ai-scanner
+          -o $HOME/bin/ai-scanner
+        chmod +x $HOME/bin/ai-scanner
+        echo "$HOME/bin" >> $GITHUB_PATH
       
     - name: Run Scan
       id: scan
