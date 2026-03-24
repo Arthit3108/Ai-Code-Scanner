@@ -21,24 +21,23 @@ inputs:
   fail_on_critical:
     description: "Fail on critical vulnerabilities"
     required: false
-    default: 'true'
+    default: "true"
   fail_on_high:
     description: "Fail on high vulnerabilities"
     required: false
-    default: 'true'
+    default: "true"
   fail_on_medium:
     description: "Fail on medium vulnerabilities"
     required: false
-    default: 'false'
+    default: "false"
   fail_on_low:
     description: "Fail on low vulnerabilities"
     required: false
-    default: 'false'
+    default: "false"
 
 runs:
   using: "composite"
   steps:
-
     - name: Install Gitleaks
       uses: gitleaks/gitleaks-action@v2
       with:
@@ -80,7 +79,7 @@ runs:
           --severity ${{ inputs.severity }} \
           --output-type ${{ inputs.output_type }} \
           --output $OUTPUT_FILE
-        
+
         echo "report_path=$OUTPUT_FILE" >> $GITHUB_OUTPUT
 
     - name: Upload SARIF to GitHub
