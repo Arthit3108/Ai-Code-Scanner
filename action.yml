@@ -110,12 +110,11 @@ runs:
         check() {
           local LEVEL=$1
           local FLAG=$2
-          COUNT=$(jq --arg s "$LEVEL" '[.[] | select(.severity == $s)] | length' "$REPORT_FILE")
-          if [ "$FLAG" == "true" ] && [ "$COUNT" -gt 0 ]; then
-            echo "❌ $LEVEL: $COUNT vulnerabilities found"
-            FAILED=1
-          else
-            echo "✅ $LEVEL: $COUNT"
+          if [ "$FLAG" == "true" ]; then
+            COUNT=$(jq --arg s "$LEVEL" '[.[] | select(.severity == $s)] | length' "$REPORT_FILE")
+            if [ "$COUNT" -gt 0 ]; then
+              FAILED=1
+            fi
           fi
         }
 
@@ -125,6 +124,5 @@ runs:
         check "LOW"      "$FAIL_ON_LOW"
 
         if [ "$FAILED" -eq 1 ]; then
-          echo "❌ Pipeline failed: vulnerabilities detected above threshold"
           exit 1
         fi
