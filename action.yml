@@ -54,7 +54,7 @@ runs:
         fi
         echo "Downloading version $VERSION"
         curl -L -H "Authorization: token ${{ github.token }}"\
-         https://github.com/Arthit3108/ai-code-scanner/releases/download/${{ github.action_ref }}/ai-scanner \
+         https://github.com/Arthit3108/ai-code-scanner/releases/download/$VERSION/ai-scanner \
           -o $HOME/bin/ai-scanner
         chmod +x $HOME/bin/ai-scanner
         echo "$HOME/bin" >> $GITHUB_PATH
