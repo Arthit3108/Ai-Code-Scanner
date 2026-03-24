@@ -8,6 +8,7 @@ import (
 )
 
 type CleanVuln struct {
+	ID               int    `json:"id"`
 	CVE              string `json:"cve"`
 	Package          string `json:"package"`
 	InstalledVersion string `json:"installed_version"`
@@ -70,6 +71,7 @@ func RunTrivy(target, outputType string) ([]CleanVuln, error) {
 		for _, result := range report.Results {
 			for _, vuln := range result.Vulnerabilities {
 				clean := CleanVuln{
+					ID:               len(vulns) + 1,
 					CVE:              vuln.VulnerabilityID,
 					Package:          vuln.PkgName,
 					InstalledVersion: vuln.InstalledVersion,
@@ -94,7 +96,7 @@ func RunTrivy(target, outputType string) ([]CleanVuln, error) {
 		dataToWrite = scanOutput
 	}
 
-	fileName := "scanResult." + outputType
+	fileName := "trivyResult." + outputType
 	errWriteFile := os.WriteFile(fileName, dataToWrite, 0644)
 
 	if errWriteFile != nil {

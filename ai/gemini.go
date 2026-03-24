@@ -8,10 +8,11 @@ import (
 	"os"
 
 	"google.golang.org/genai"
+	"strings"
 )
 
 type AiAnalysis struct {
-	CVE            string `json:"cve"`
+	ID             int    `json:"id"`
 	FixCommand     string `json:"fix_command"`
 	FixExplanation string `json:"fix_explanation"`
 }
@@ -39,7 +40,7 @@ func Gemini(vuln []scanner.CleanVuln) ([]AiAnalysis, error) {
 		Respond in this exact JSON array format, nothing else (no markdown block):
 		[
 			{
-				"cve": "CVE-xxxx",
+				"id": 1,
 				"fix_command": "command here",
 				"fix_explanation": "One sentence why this fixes it"
 			}
@@ -56,7 +57,14 @@ func Gemini(vuln []scanner.CleanVuln) ([]AiAnalysis, error) {
 	}
 
 	var analysis []AiAnalysis
-	if err := json.Unmarshal([]byte(result.Text()), &analysis); err != nil {
+	cleanText := result.Text()
+	// Strip markdown blocks if present
+	cleanText = strings.TrimPrefix(cleanText, "```json")
+	cleanText = strings.TrimPrefix(cleanText, "```")
+	cleanText = strings.TrimSuffix(cleanText, "```")
+	cleanText = strings.TrimSpace(cleanText)
+
+	if err := json.Unmarshal([]byte(cleanText), &analysis); err != nil {
 		fmt.Printf("AI Response: %s\n", result.Text())
 		return nil, fmt.Errorf("failed to parse AI response: %w", err)
 	}

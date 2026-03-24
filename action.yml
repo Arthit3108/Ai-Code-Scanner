@@ -1,0 +1,111 @@
+name: "AI Code Scanner"
+description: "AI-powered code vulnerability scanner"
+author: "Arthit3108"
+
+inputs:
+  gemini_api_key:
+    description: "Gemini API Key"
+    required: true
+  target:
+    description: "Target directory to scan"
+    required: false
+    default: "."
+  severity:
+    description: "Severity level to scan"
+    required: false
+    default: "HIGH,CRITICAL"
+  fail_on_critical:
+    description: "Fail on critical vulnerabilities"
+    required: false
+    default: 'true'
+  fail_on_high:
+    description: "Fail on high vulnerabilities"
+    required: false
+    default: 'true'
+  fail_on_medium:
+    description: "Fail on medium vulnerabilities"
+    required: false
+    default: 'false'
+  fail_on_low:
+    description: "Fail on low vulnerabilities"
+    required: false
+    default: 'false'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Tricy
+      shell: bash
+      run: |
+        curl -fsSL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.50.2
+    
+    - name: Download Scanner Binary
+      shell: bash
+      run: |
+        curl -L https://github.com/Arthit3108/ai-code-scanner/releases/latest/download/ai-scanner \
+          -o /usr/local/bin/ai-scanner
+        chmod +x /usr/local/bin/ai-scanner
+      
+    - name: Run Scan
+      id: scan
+      shell: bash
+      env:
+        GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
+      run: |
+        ai-scanner scan \
+          --target ${{ inputs.target }} \
+          --severity ${{ inputs.severity }} \
+          --output report.json
+        echo "report_path=report.json" >> $GITHUB_OUTPUT
+
+    - name: Upload Report Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-report
+        path: report.json
+        
+    - name: Fail if CRITICAL
+      if: inputs.fail_on_critical == 'true'
+      shell: bash
+      run: |
+        CRITICAL=$(jq '[.[] | select(.severity == "CRITICAL")] | length' report.json)
+        echo "CRITICAL found: $CRITICAL"
+        if [ "$CRITICAL" -gt 0 ]; then
+          echo "❌ Pipeline failed: CRITICAL vulnerabilities detected"
+          exit 1
+        fi
+    
+    
+
+    - name: Fail if HIGH
+      if: inputs.fail_on_high == 'true'
+      shell: bash
+      run: |
+        HIGH=$(jq '[.[] | select(.severity == "HIGH")] | length' report.json)
+        echo "HIGH found: $HIGH"
+        if [ "$HIGH" -gt 0 ]; then
+          echo "❌ Pipeline failed: HIGH vulnerabilities detected"
+          exit 1
+        fi
+
+    - name: Fail if MEDIUM
+      if: inputs.fail_on_medium == 'true'
+      shell: bash
+      run: |
+        MEDIUM=$(jq '[.[] | select(.severity == "MEDIUM")] | length' report.json)
+        echo "MEDIUM found: $MEDIUM"
+        if [ "$MEDIUM" -gt 0 ]; then
+          echo "❌ Pipeline failed: MEDIUM vulnerabilities detected"
+          exit 1
+        fi
+
+    - name: Fail if LOW
+      if: inputs.fail_on_low == 'true'
+      shell: bash
+      run: |
+        LOW=$(jq '[.[] | select(.severity == "LOW")] | length' report.json)
+        echo "LOW found: $LOW"
+        if [ "$LOW" -gt 0 ]; then
+          echo "❌ Pipeline failed: LOW vulnerabilities detected"
+          exit 1
+        fi
