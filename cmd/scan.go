@@ -62,11 +62,38 @@ var scanCmd = &cobra.Command{
 			dataToWrite = rawOutput
 		}
 
+		// Print summary
+		critical := 0
+		high := 0
+		medium := 0
+		low := 0
+		for _, v := range vuln {
+			switch v.Severity {
+			case "CRITICAL":
+				critical++
+			case "HIGH":
+				high++
+			case "MEDIUM":
+				medium++
+			case "LOW":
+				low++
+			}
+		}
+
+		fmt.Println("\n---------------------------------------")
+		fmt.Println("Scan Results Summary:")
+		fmt.Printf("Total Vulnerabilities: %d\n", len(vuln))
+		fmt.Printf("Critical: %d\n", critical)
+		fmt.Printf("High: %d\n", high)
+		fmt.Printf("Medium: %d\n", medium)
+		fmt.Printf("Low: %d\n", low)
+		fmt.Println("---------------------------------------")
+
 		err = os.WriteFile(outputPath, dataToWrite, 0644)
 		if err != nil {
 			fmt.Println("Error writing final output:", err)
 		} else {
-			fmt.Println("Successfully saved results to", outputPath)
+			fmt.Printf("Successfully saved results to %s\n", outputPath)
 		}
 	},
 }

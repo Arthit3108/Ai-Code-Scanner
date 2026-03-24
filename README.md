@@ -106,6 +106,30 @@ To see scan results in GitHub's **Security → Code Scanning** tab:
 
 > **Important:** You must set `permissions: security-events: write` on the job.
 
+## 🏗️ Jenkins Integration
+
+To use AI Code Scanner in Jenkins, follow these steps:
+
+### Prerequisites
+
+- **Trivy** must be installed on the Jenkins node (the `Jenkinsfile` will attempt to install it if missing).
+- **jq** must be installed for severity threshold checking.
+- **Jenkins Credentials**: Create a "Secret text" credential with your Gemini API key.
+
+### Setup
+
+1. Go to **Manage Jenkins → Credentials → System → Global credentials**.
+2. Add a new credential:
+   - **Kind**: Secret text
+   - **Secret**: `your-gemini-api-key`
+   - **ID**: `gemini-api-key`
+3. Add the `Jenkinsfile` from this repository to your project's root.
+4. Create a "Pipeline" job and point it to your repository.
+
+[View Jenkinsfile Example](Jenkinsfile)
+
+---
+
 ## 🏗️ Architecture
 
 ```
