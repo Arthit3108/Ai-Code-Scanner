@@ -120,7 +120,7 @@ runs:
           local LEVEL=$1
           local FLAG=$2
           if [ "$FLAG" == "true" ]; then
-            COUNT=$(jq --arg s "$LEVEL" '[.[] | select(.severity == $s)] | length' "$REPORT_FILE")
+            COUNT=$(jq --arg s "$LEVEL" '[.vulnerabilities[]? | select(.severity == $s)] | length' "$REPORT_FILE")
             if [ "$COUNT" -gt 0 ]; then
               FAILED=1
             fi

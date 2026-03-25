@@ -61,8 +61,8 @@ pipeline {
             }
             steps {
                 sh '''
-                    CRITICAL_COUNT=$(jq '[.[] | select(.severity == "CRITICAL")] | length' scanResult.json)
-                    HIGH_COUNT=$(jq '[.[] | select(.severity == "HIGH")] | length' scanResult.json)
+                    CRITICAL_COUNT=$(jq '[.vulnerabilities[]? | select(.severity == "CRITICAL")] | length' scanResult.json)
+                    HIGH_COUNT=$(jq '[.vulnerabilities[]? | select(.severity == "HIGH")] | length' scanResult.json)
                     
                     echo "---------------------------------------"
                     echo "Scan Results Summary:"

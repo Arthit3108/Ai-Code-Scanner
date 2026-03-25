@@ -19,8 +19,13 @@ type AiAnalysis struct {
 
 func Gemini(vuln []scanner.CleanVuln, secrets []scanner.GitleaksFinding) ([]AiAnalysis, error) {
 	ctx := context.Background()
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("GEMINI_API_KEY environment variable is not set")
+	}
+
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
-		APIKey: os.Getenv("GEMINI_API_KEY"),
+		APIKey: apiKey,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create genai client: %w", err)
@@ -58,7 +63,7 @@ func Gemini(vuln []scanner.CleanVuln, secrets []scanner.GitleaksFinding) ([]AiAn
 
 	result, err := client.Models.GenerateContent(
 		ctx,
-		"gemini-2.5-flash",
+		"gemini-1.5-flash",
 		genai.Text(prompt),
 		nil,
 	)

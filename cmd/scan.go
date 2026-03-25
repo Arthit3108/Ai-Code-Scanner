@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 
 	"ai-code-scanner/ai"
@@ -21,8 +20,6 @@ var scanCmd = &cobra.Command{
 	Use:   "scan",
 	Short: "Scan a target",
 	Run: func(cmd *cobra.Command, args []string) {
-		_ = godotenv.Load(".env")
-
 		vuln, rawOutput, err := scanner.RunTrivy(target, outputType, severity)
 		if err != nil {
 			fmt.Printf("Trivy Scan Error: %v\n", err)
